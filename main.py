@@ -19,6 +19,7 @@ class Player:
     def __init__(self, name):
         self.__name = name
         self.__card = Card()
+        self.is_playing = True
 
     @property
     def card(self):
@@ -27,8 +28,34 @@ class Player:
     def get_card_for_print(self):
         return self.__name.center(22, '-') + '\n' + str(self.__card) + '-' * 22
 
+    def analyse_current_number(self, item, action=1):
+        if item in self.__card:
+            self.__card.cross_out(item)
+
     def __str__(self):
-        return f'{self.__class__.__name__} <{self.__name}>'
+        return self.__name
+
+
+class HumanPlayer(Player):
+    def __init__(self, name):
+        super().__init__(name)
+
+    def request_action(self):
+        requested_action = input(
+            f'Do {self} want to draw out the current number or to continue '
+            f'(0 - continue, 1 - draw)? By default it\'s continue: ')
+        return 1 if requested_action == '1' else 0
+
+    def analyse_current_number(self, item, action=1):
+        if not action and current_number in self.card:
+            return f'{self} chose to continue while he has the number ' \
+                   f'to cross out. He lose!'
+        elif action and current_number not in self.card:
+            return f'{self} chose to cross out the number while he hasn\'t ' \
+                   f'it in his card. He lose!'
+
+        if current_number in self.card:
+            self.card.cross_out(item)
 
 
 class Card:
@@ -64,41 +91,56 @@ class Card:
 
 
 if __name__ == '__main__':
+    mode = input('Enter the game mode (1 - human vs computer, 2 - human vs human, 3 - computer vs computer). '
+                 'By default it\'s human vs computer: ')
+    if mode == '2':
+        player1 = HumanPlayer('Player 1')
+        player2 = HumanPlayer('Player 2')
+    elif mode == '3':
+        player1 = Player('Computer 1')
+        player2 = Player('Computer 2')
+    else:
+        player1 = HumanPlayer('Player')
+        player2 = Player('Computer')
+
     game_bag = Bag()
-    player1 = Player('Computer1')
-    player2 = Player('Computer2')
-    player1_continues_game = True
-    player2_continues_game = True
     step = 1
 
-    while player1_continues_game and player2_continues_game:
+    while player1.is_playing and player2.is_playing:
         print(f'Step №{step}')
         print(f'Bag is {game_bag}')
-        print(player1.get_card_for_print())
-        print(player2.get_card_for_print())
+
+        for player in (player1, player2):
+            print(player.get_card_for_print())
 
         current_number = game_bag.pop()
         print(f'Current number is {current_number}')
-        if current_number in player1.card:
-            player1.card.cross_out(current_number)
-        if current_number in player2.card:
-            player2.card.cross_out(current_number)
+
+        for player in (player1, player2):
+            if isinstance(player, HumanPlayer):
+                action = player.request_action()
+                result = player.analyse_current_number(current_number, action)
+                if result:
+                    print(result)
+                    player.is_playing = False
+            else:
+                player.analyse_current_number(current_number)
 
         print()
 
-        if player1.card.is_empty():
-            player1_continues_game = False
-        if player2.card.is_empty():
-            player2_continues_game = False
+        for player in (player1, player2):
+            if player.card.is_empty():
+                player.is_playing = False
 
         step += 1
 
-    if not player1_continues_game and not player2_continues_game:
-        print('It\'s a draw. Nobody wins.')
-    elif not player1_continues_game:
+    if not player1.is_playing and player1.card.is_empty() and \
+            not player2.is_playing and player2.card.is_empty():
+        print('It\'s a draw. Everybody wins.')
+    elif not player1.is_playing and player1.card.is_empty():
         print(f'{player1} won the game!')
-    else:
+    elif not player2.is_playing and player2.card.is_empty():
         print(f'{player2} won the game!')
 
-    print(player1.get_card_for_print())
-    print(player2.get_card_for_print())
+    for player in (player1, player2):
+        print(player.get_card_for_print())
