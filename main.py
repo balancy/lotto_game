@@ -47,14 +47,14 @@ class HumanPlayer(Player):
         return 1 if requested_action == '1' else 0
 
     def analyse_current_number(self, item, action=1):
-        if not action and current_number in self.card:
+        if not action and item in self.card:
             return f'{self} chose to continue while he has the number ' \
                    f'to cross out. He lose!'
-        elif action and current_number not in self.card:
+        elif action and item not in self.card:
             return f'{self} chose to cross out the number while he hasn\'t ' \
                    f'it in his card. He lose!'
 
-        if current_number in self.card:
+        if item in self.card:
             self.card.cross_out(item)
 
 
@@ -90,33 +90,36 @@ class Card:
         return returned_string
 
 
-if __name__ == '__main__':
-    mode = input('Enter the game mode (1 - human vs computer, 2 - human vs human, 3 - computer vs computer). '
-                 'By default it\'s human vs computer: ')
-    if mode == '2':
-        player1 = HumanPlayer('Player 1')
-        player2 = HumanPlayer('Player 2')
-    elif mode == '3':
-        player1 = Player('Computer 1')
-        player2 = Player('Computer 2')
-    else:
-        player1 = HumanPlayer('Player')
-        player2 = Player('Computer')
+class Game:
+    def __init__(self, mode):
+        if mode == '2':
+            self.player1 = HumanPlayer('Player 1')
+            self.player2 = HumanPlayer('Player 2')
+        elif mode == '3':
+            self.player1 = Player('Computer 1')
+            self.player2 = Player('Computer 2')
+        else:
+            self.player1 = HumanPlayer('Player')
+            self.player2 = Player('Computer')
 
-    game_bag = Bag()
-    step = 1
+        self.game_bag = Bag()
+        self.round = 1
 
-    while player1.is_playing and player2.is_playing:
-        print(f'Step №{step}')
-        print(f'Bag is {game_bag}')
-
-        for player in (player1, player2):
+    def __print_player_cards(self):
+        for player in (self.player1, self.player2):
             print(player.get_card_for_print())
 
-        current_number = game_bag.pop()
-        print(f'Current number is {current_number}')
+    def __print_header(self):
+        print(f'Round №{self.round}')
+        self.__print_player_cards()
 
-        for player in (player1, player2):
+    def __check_players_continue_playing(self):
+        for player in (self.player1, self.player2):
+            if player.card.is_empty():
+                player.is_playing = False
+
+    def __make_players_play_round(self, current_number):
+        for player in (self.player1, self.player2):
             if isinstance(player, HumanPlayer):
                 action = player.request_action()
                 result = player.analyse_current_number(current_number, action)
@@ -126,21 +129,47 @@ if __name__ == '__main__':
             else:
                 player.analyse_current_number(current_number)
 
+    def is_continue(self):
+        return self.player1.is_playing and self.player2.is_playing
+
+    def play_round(self):
+        self.__print_header()
+
+        current_number = self.game_bag.pop()
+        print(f'Current number is {current_number}')
+
+        self.__make_players_play_round(current_number)
         print()
 
-        for player in (player1, player2):
-            if player.card.is_empty():
-                player.is_playing = False
+        self.__check_players_continue_playing()
+        self.round += 1
 
-        step += 1
+    def __str__(self):
+        return \
+            f'{self.__class__.__name__} with {self.player1} and {self.player2}'
 
-    if not player1.is_playing and player1.card.is_empty() and \
-            not player2.is_playing and player2.card.is_empty():
-        print('It\'s a draw. Everybody wins.')
-    elif not player1.is_playing and player1.card.is_empty():
-        print(f'{player1} won the game!')
-    elif not player2.is_playing and player2.card.is_empty():
-        print(f'{player2} won the game!')
+    def analyse_results(self):
+        if not self.player1.is_playing \
+                and self.player1.card.is_empty() \
+                and not self.player2.is_playing \
+                and self.player2.card.is_empty():
+            print('It\'s a draw. Everybody wins.')
+        elif not self.player1.is_playing \
+                and self.player1.card.is_empty():
+            print(f'{self.player1} won the game!')
+        elif not self.player2.is_playing \
+                and self.player2.card.is_empty():
+            print(f'{self.player2} won the game!')
 
-    for player in (player1, player2):
-        print(player.get_card_for_print())
+        self.__print_player_cards()
+
+
+if __name__ == '__main__':
+    mode = input('Enter the game mode (1 - human vs computer, 2 - human vs human, 3 - computer vs computer). '
+                 'By default it\'s human vs computer: ')
+
+    game = Game(mode)
+    while game.is_continue():
+        game.play_round()
+
+    game.analyse_results()
