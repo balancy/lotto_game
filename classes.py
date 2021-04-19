@@ -150,16 +150,13 @@ class Game:
     Represents lotto game
     """
 
-    def __init__(self, mode):
-        if mode == '2':
-            self.player1 = HumanPlayer('Player 1')
-            self.player2 = HumanPlayer('Player 2')
-        elif mode == '3':
-            self.player1 = Player('Computer 1')
-            self.player2 = Player('Computer 2')
-        else:
-            self.player1 = HumanPlayer('Player')
-            self.player2 = Player('Computer')
+    def __init__(self, *args):
+        self.players = []
+        for count, arg in enumerate(*args, start=1):
+            if not arg:
+                self.players.append(HumanPlayer(f'Player {count}'))
+            else:
+                self.players.append(Player(f'Computer {count}'))
 
         self.game_bag = Bag()
         self.round = 1
@@ -169,7 +166,7 @@ class Game:
         Prints player cards.
         """
 
-        for player in (self.player1, self.player2):
+        for player in self.players:
             print(player.get_card_for_print())
 
     def __print_round_header(self):
@@ -186,7 +183,7 @@ class Game:
         :return:
         """
 
-        for player in (self.player1, self.player2):
+        for player in self.players:
             if player.card.is_empty():
                 player.is_playing = False
 
@@ -196,7 +193,7 @@ class Game:
         :param current_number: current number from the bag
         """
 
-        for player in (self.player1, self.player2):
+        for player in self.players:
             if isinstance(player, HumanPlayer):
                 action = player.request_action()
                 result = player.analyse_current_number(current_number, action)
@@ -207,7 +204,7 @@ class Game:
                 player.analyse_current_number(current_number)
 
     def is_continue(self):
-        return self.player1.is_playing and self.player2.is_playing
+        return all(player.is_playing for player in self.players)
 
     def play_round(self):
         """
@@ -227,23 +224,19 @@ class Game:
 
     def __str__(self):
         return \
-            f'{self.__class__.__name__} with {self.player1} and {self.player2}'
+            f'{self.__class__.__name__} with {len(self.players)} players'
 
     def analyse_results(self):
         """
         Analyses results and print them out.
         """
 
-        if not self.player1.is_playing \
-                and self.player1.card.is_empty() \
-                and not self.player2.is_playing \
-                and self.player2.card.is_empty():
+        if not any(player.is_playing for player in self.players) \
+                and all(player.card.is_empty() for player in self.players):
             print('It\'s a draw. Everybody wins.')
-        elif not self.player1.is_playing \
-                and self.player1.card.is_empty():
-            print(f'{self.player1} won the game!')
-        elif not self.player2.is_playing \
-                and self.player2.card.is_empty():
-            print(f'{self.player2} won the game!')
+        else:
+            for player in self.players:
+                if not player.is_playing and player.card.is_empty():
+                    print(f'{player} won the game!')
 
         self.__print_player_cards()
