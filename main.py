@@ -1,4 +1,4 @@
-from classes import Game
+from game import Game
 
 
 def request_user_input_data():
