@@ -49,3 +49,5 @@ class Card:
 
         return returned_string
 
+    def __len__(self):
+        return len(self.__numbers)

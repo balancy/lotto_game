@@ -23,6 +23,9 @@ class Bag:
     def __str__(self):
         return ' '.join(str(elm) for elm in self.__numbers)
 
+    def __len__(self):
+        return len(self.__numbers)
+
 
 
 

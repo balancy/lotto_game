@@ -6,7 +6,7 @@ class Player:
     Represents computer player.
     """
 
-    def __init__(self, name):
+    def __init__(self, name='Computer'):
         self.__name = name
         self.__card = Card()
         self.is_playing = True
